@@ -1,9 +1,10 @@
-// ignore_for_file: library_private_types_in_public_api, no_leading_underscores_for_local_identifiers
+// ignore_for_file: no_leading_underscores_for_local_identifiers
 
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:search_gif/ui/gif_page.dart';
+import 'package:share_plus/share_plus.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -15,12 +16,15 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   String? _search;
   int _offset = 0;
+  final _searchLimit = 19, _trendingLimit = 20;
 
   Future<Map> _getGifs() async {
     http.Response response;
 
-    String _urlTrending = 'https://api.giphy.com/v1/gifs/trending?api_key=HDCwvAS6eUQUMbdGNHeuwT3nI5KWm2sz&limit=25&offset=0&rating=g&bundle=messaging_non_clips';
-    String _urlSearch = 'https://api.giphy.com/v1/gifs/search?api_key=HDCwvAS6eUQUMbdGNHeuwT3nI5KWm2sz&q=$_search&limit=25&offset=$_offset&rating=g&lang=pt&bundle=messaging_non_clips';
+    String _urlTrending =
+        'https://api.giphy.com/v1/gifs/trending?api_key=HDCwvAS6eUQUMbdGNHeuwT3nI5KWm2sz&limit=$_trendingLimit&offset=0&rating=g&bundle=messaging_non_clips';
+    final String _urlSearch =
+        'https://api.giphy.com/v1/gifs/search?api_key=HDCwvAS6eUQUMbdGNHeuwT3nI5KWm2sz&q=$_search&limit=$_searchLimit&offset=$_offset&rating=g&lang=pt&bundle=messaging_non_clips';
 
     if (_search == null) {
       response = await http.get(Uri.parse(_urlTrending));
@@ -44,17 +48,17 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.black,
-        title: const Text('Gifs'),
+        title: const Text('Buscador de Gif'),
         centerTitle: true,
       ),
       backgroundColor: Colors.black,
       body: Column(
         children: [
-          const Padding(
-            padding: EdgeInsets.all(8.0),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
             child: TextField(
-              decoration: InputDecoration(
-                labelText: "Pesquise aqui!",
+              decoration: const InputDecoration(
+                labelText: 'Buscar',
                 labelStyle: TextStyle(color: Colors.white),
                 focusedBorder: OutlineInputBorder(
                   borderSide: BorderSide(color: Colors.white),
@@ -63,8 +67,14 @@ class _HomePageState extends State<HomePage> {
                   borderSide: BorderSide(color: Colors.white),
                 ),
               ),
-              style: TextStyle(color: Colors.white, fontSize: 18.0),
-              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.white, fontSize: 14.0),
+              textAlign: TextAlign.left,
+              onSubmitted: (text) {
+                setState(() {
+                  _search = text;
+                  _offset = 0;
+                });
+              },
             ),
           ),
           Expanded(
@@ -98,6 +108,22 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  int getCount(List data) {
+    if (_search == null) {
+      return data.length;
+    } else {
+      return data.length + 1;
+    }
+  }
+
+  // Future<void> share(String link) async {
+  //   await FlutterShare.share(
+  //       title: 'Compartilhar Gif',
+  //       text: 'Compartilhe com quem desejar essa gif...',
+  //       linkUrl: link,
+  //       chooserTitle: null);
+  // }
+
   Widget _createGifTable(BuildContext context, AsyncSnapshot snapshot) {
     return GridView.builder(
       padding: const EdgeInsets.all(8),
@@ -106,15 +132,46 @@ class _HomePageState extends State<HomePage> {
         crossAxisSpacing: 8,
         mainAxisSpacing: 8,
       ),
-      itemCount: snapshot.data["data"].length,
+      itemCount: getCount(snapshot.data['data']),
       itemBuilder: (context, index) {
-        return GestureDetector(
-          child: Image.network(
-            snapshot.data["data"][index]["images"]["fixed_height"]["url"],
-            height: 300,
-            fit: BoxFit.cover,
-          ),
-        );
+        if (_search == null || index < snapshot.data['data'].length) {
+          return GestureDetector(
+            child: Image.network(
+              snapshot.data['data'][index]['images']['fixed_height']['url'],
+              height: 300,
+              fit: BoxFit.cover,
+            ),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => GifPage(snapshot.data['data'][index]),
+                ),
+              );
+            },
+            onLongPress: (){
+              //Share.share(snapshot.data['data'][index]['images']['fixed_height']['url']);
+            },
+          );
+        } else {
+          return GestureDetector(
+            child: const Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.replay, color: Colors.white, size: 50.0),
+                Text(
+                  'Recarregar',
+                  style: TextStyle(color: Colors.white, fontSize: 22.0),
+                ),
+              ],
+            ),
+            onTap: () {
+              setState(() {
+                _offset += 19;
+              });
+            },
+          );
+        }
       },
     );
   }
