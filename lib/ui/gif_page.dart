@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:share_plus/share_plus.dart';
+import 'package:flutter_share/flutter_share.dart';
 
 class GifPage extends StatelessWidget {
   final Map _gifData;
@@ -11,28 +11,29 @@ class GifPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(_gifData['title']),
-        backgroundColor: Colors.black,
+        backgroundColor: Colors.black87,
+        foregroundColor: Colors.white,
         actions: [
           IconButton(
             icon: const Icon(Icons.share),
             onPressed: () {
-              //Share.share(_gifData['images']['fixed_height']['url']);
+              share();
             },
           ),
         ],
       ),
-      backgroundColor: Colors.black,
+      backgroundColor: Colors.black87,
       body: Center(
         child: Image.network(_gifData['images']['fixed_height']['url']),
       ),
     );
   }
 
-  // Future<void> share() async {
-  //   await FlutterShare.share(
-  //       title: 'Compartilhar Gif',
-  //       text: 'Compartilhe com quem desejar essa gif...',
-  //       linkUrl: _gifData['images']['fixed_height']['url'],
-  //       chooserTitle: _gifData['title']);
-  // }
+  Future<void> share() async {
+    await FlutterShare.share(
+        title: 'Compartilhar Gif',
+        text: 'Compartilhe com quem desejar essa gif...',
+        linkUrl: _gifData['images']['fixed_height']['url'],
+        chooserTitle: _gifData['title']);
+  }
 }

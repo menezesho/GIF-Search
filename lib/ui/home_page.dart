@@ -1,10 +1,12 @@
 // ignore_for_file: no_leading_underscores_for_local_identifiers
 
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:flutter_share/flutter_share.dart';
 import 'package:http/http.dart' as http;
 import 'package:search_gif/ui/gif_page.dart';
-import 'package:share_plus/share_plus.dart';
+import 'package:transparent_image/transparent_image.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -26,7 +28,7 @@ class _HomePageState extends State<HomePage> {
     final String _urlSearch =
         'https://api.giphy.com/v1/gifs/search?api_key=HDCwvAS6eUQUMbdGNHeuwT3nI5KWm2sz&q=$_search&limit=$_searchLimit&offset=$_offset&rating=g&lang=pt&bundle=messaging_non_clips';
 
-    if (_search == null) {
+    if (_search == null || _search.toString().isEmpty) {
       response = await http.get(Uri.parse(_urlTrending));
     } else {
       response = await http.get(Uri.parse(_urlSearch));
@@ -47,17 +49,20 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.black,
+        backgroundColor: Colors.black87,
+        foregroundColor: Colors.white,
         title: const Text('Buscador de Gif'),
         centerTitle: true,
       ),
-      backgroundColor: Colors.black,
+      backgroundColor: Colors.black87,
       body: Column(
         children: [
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: TextField(
               decoration: const InputDecoration(
+                prefixIconColor: Colors.white,
+                prefixIcon: Icon(Icons.search),
                 labelText: 'Buscar',
                 labelStyle: TextStyle(color: Colors.white),
                 focusedBorder: OutlineInputBorder(
@@ -109,20 +114,20 @@ class _HomePageState extends State<HomePage> {
   }
 
   int getCount(List data) {
-    if (_search == null) {
+    if (_search == null || _search.toString().isEmpty) {
       return data.length;
     } else {
       return data.length + 1;
     }
   }
 
-  // Future<void> share(String link) async {
-  //   await FlutterShare.share(
-  //       title: 'Compartilhar Gif',
-  //       text: 'Compartilhe com quem desejar essa gif...',
-  //       linkUrl: link,
-  //       chooserTitle: null);
-  // }
+  Future<void> share(String link) async {
+    await FlutterShare.share(
+        title: 'Compartilhar Gif',
+        text: 'Compartilhe com quem desejar essa gif...',
+        linkUrl: link,
+        chooserTitle: null);
+  }
 
   Widget _createGifTable(BuildContext context, AsyncSnapshot snapshot) {
     return GridView.builder(
@@ -134,11 +139,12 @@ class _HomePageState extends State<HomePage> {
       ),
       itemCount: getCount(snapshot.data['data']),
       itemBuilder: (context, index) {
-        if (_search == null || index < snapshot.data['data'].length) {
+        if (_search == null || _search.toString().isEmpty || index < snapshot.data['data'].length) {
           return GestureDetector(
-            child: Image.network(
-              snapshot.data['data'][index]['images']['fixed_height']['url'],
-              height: 300,
+            child: FadeInImage.memoryNetwork(
+              placeholder: kTransparentImage,
+              image: snapshot.data['data'][index]['images']['fixed_height']['url'],
+              height: 300.0,
               fit: BoxFit.cover,
             ),
             onTap: () {
@@ -149,8 +155,8 @@ class _HomePageState extends State<HomePage> {
                 ),
               );
             },
-            onLongPress: (){
-              //Share.share(snapshot.data['data'][index]['images']['fixed_height']['url']);
+            onLongPress: () {
+              share(snapshot.data['data'][index]['images']['fixed_height']['url'].toString());
             },
           );
         } else {
